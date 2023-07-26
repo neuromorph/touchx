@@ -43,8 +43,7 @@ Use the settings panel of the extension for customizations:
 
 ## Screenshots
 
-![Screenshot](media/ripple.webm)  
-
+![Screenshot](media/ripple.gif)  
 ![Screenshot](media/Screenshot.png)
 
 
