@@ -105,10 +105,13 @@ class TouchXExtension {
         if (!!this._ripples ){
             this._ripples.destroy();
             this._ripples = null;
-        }   
-        Main.layoutManager._backgroundGroup.remove_child(this._pseudoDesktop);
-        this._pseudoDesktop.destroy();
-        this._pseudoDesktop = null;
+        }  
+        
+        if (!!this._pseudoDesktop ){
+            Main.layoutManager._backgroundGroup.remove_child(this._pseudoDesktop);
+            this._pseudoDesktop.destroy();
+            this._pseudoDesktop = null;
+        }
     }
 
 }
