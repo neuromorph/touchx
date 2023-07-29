@@ -199,12 +199,12 @@ const TouchXSettingsWidget = new GObject.registerClass(
 
 
 function buildPrefsWidget() {
-let prefWidget =  new TouchXSettingsWidget();
-prefWidget.connect("realize", ()=>{
-  const window = prefWidget.get_root();
-  window.set_title(_("Touch X"));
-  window.default_height = 500;
-  window.default_width = 500;
-});
-return prefWidget;
+  let prefWidget =  new TouchXSettingsWidget();
+  prefWidget.connect("realize", ()=>{
+    const window = prefWidget.get_root();
+    window.set_title(_("Touch X"));
+    window.default_height = 500;
+    window.default_width = 500;
+  });
+  return prefWidget;
 }

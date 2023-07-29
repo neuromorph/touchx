@@ -14,6 +14,7 @@ class TouchXExtension {
         this._settings = null;
         this._ripples = null;
         this._pseudoDesktop = null;
+        this.handlerId = null;
     }
 
     _styleRipple(radius, bgcolor){
@@ -23,9 +24,9 @@ class TouchXExtension {
         const bgblue = parseInt(parseFloat(bgcolor[2]) * 255);
 
         let ripStyle = `width: ${radius}px; height: ${radius}px; 
-        border-radius: ${radius}px ${radius}px ${radius}px ${radius}px; 
-        background-color: rgba(${bgred},${bggreen},${bgblue},0.5);
-        box-shadow: 0 0 1px 1px rgba(255,255,255,0.2);`;
+            border-radius: ${radius}px ${radius}px ${radius}px ${radius}px; 
+            background-color: rgba(${bgred},${bggreen},${bgblue},0.5);
+            box-shadow: 0 0 1px 1px rgba(255,255,255,0.2);`;
 
         this._ripples._ripple1.style = ripStyle;
         this._ripples._ripple2.style = ripStyle;
@@ -38,7 +39,7 @@ class TouchXExtension {
         let radius = this._settings.get_int('radius');
         let bgcolor = this._settings.get_strv('bgcolor');
 
-        if (!!this._ripples ){
+        if (this._ripples ){
             if (enabled){
                 this._styleRipple(radius, bgcolor);
             }
@@ -88,7 +89,7 @@ class TouchXExtension {
             Main.layoutManager._backgroundGroup.add_child(this._pseudoDesktop);
         }
 
-        global.stage.connect('touch-event', (actor, event) => {
+        this.handlerId = global.stage.connect('touch-event', (actor, event) => {
             let type = event.type();
             if (type == Clutter.EventType.TOUCH_BEGIN){               
                 let [x, y] = event.get_coords();
@@ -102,16 +103,23 @@ class TouchXExtension {
 
     disable() {
         
-        if (!!this._ripples ){
+        if (this.handlerId) {
+            global.stage.disconnect(this.handlerId);
+            this.handlerId = null;
+        }
+
+        if (this._ripples ){
             this._ripples.destroy();
             this._ripples = null;
         }  
         
-        if (!!this._pseudoDesktop ){
+        if (this._pseudoDesktop ){
             Main.layoutManager._backgroundGroup.remove_child(this._pseudoDesktop);
             this._pseudoDesktop.destroy();
             this._pseudoDesktop = null;
         }
+
+        this._settings = null;
     }
 
 }
