@@ -2,7 +2,7 @@
 # Touch X (GNOME 4X Extension)  
 
 
-A GNOME Shell extension for touch screen accessibility. Currently supports ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size and color as you see fit.
+A GNOME Shell extension for touch screen accessibility. Currently supports ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size, duration and color as you see fit.
 
 
 ## Installation
@@ -34,9 +34,11 @@ Use the settings panel of the extension for customizations:
 - Enable / Disable feedback ripple
 - Set ripple size
 - Set ripple color
+- Set ripple time duration
 
 
 ## What's New (recent first)
+- Desktop long-press menu bug fix and added support for ripple duration
 - Initial version created
 
 
@@ -44,7 +46,7 @@ Use the settings panel of the extension for customizations:
 ## Screenshots
 
 ![Screenshot](media/ripple.gif)  
-![Screenshot](media/Screenshot.png)
+![Screenshot](media/ripplesScreen.gif) 
 
 
 

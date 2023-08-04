@@ -166,11 +166,39 @@ const TouchXSettingsWidget = new GObject.registerClass(
       //-------------------------------------------------------
 
       rowNo += 2
+
+      this.time = new Gtk.SpinButton({halign: Gtk.Align.END});
+      this.time.set_sensitive(true);
+      this.time.set_range(1, 20);
+      this.time.set_value(10);
+      this.time.width_chars = 4;
+      this.time.set_value(this._settings.get_int("time"));
+      this.time.set_increments(1, 2);
+
+      this.time.connect(
+        "value-changed",
+        function (w) {
+          var value = w.get_value_as_int();
+          this._settings.set_int("time", value);
+        }.bind(this)
+      );
+
+      this.timeLabel = new Gtk.Label({
+        label: 'Ripple Time :',
+        use_markup: true,
+        halign: Gtk.Align.START,
+      });
+
+      this.attach(this.timeLabel,   1, rowNo, 1, 1);
+      this.attach(this.time, 2, rowNo, 1, 1);
+
+      //-------------------------------------------------------
+
+      rowNo += 2
       this.separator2 = new Gtk.Separator({
         orientation: Gtk.Orientation.HORIZONTAL,
         hexpand: true,
         margin_top: this.margin_top,
-        // visible: true,
       });
       this.attach(this.separator2, 1, rowNo, 2, 1);
 
@@ -180,14 +208,15 @@ const TouchXSettingsWidget = new GObject.registerClass(
       this.noteLabel = new Gtk.Label({
         label: `<span allow_breaks="true" size="small" underline="none">
         • Enable Touch Ripple to get feedback ripple on touch.
-        • Use Radius and Color to customize size and color of the ripple.
-        • Visit  <a href="${Me.metadata.url}">Touch X</a>  page for more details. </span>`,
+        • Use Radius, Color and Time to customize ripple appearance.
+
+                        Visit  <a href="${Me.metadata.url}">Touch X</a>  page for more details. </span>`,
         use_markup: true,
         hexpand: true,
         halign: Gtk.Align.START,
         wrap: true,
         width_chars: 40,
-        margin_top: 20,
+        margin_top: 1,
       });
 
       this.attach(this.noteLabel, 1, rowNo, 2, 1);
@@ -203,7 +232,7 @@ function buildPrefsWidget() {
   prefWidget.connect("realize", ()=>{
     const window = prefWidget.get_root();
     window.set_title(_("Touch X"));
-    window.default_height = 500;
+    window.default_height = 525;
     window.default_width = 500;
   });
   return prefWidget;

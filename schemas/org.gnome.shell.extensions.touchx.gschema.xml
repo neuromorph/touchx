@@ -16,5 +16,10 @@
       <summary>BG Color (RGB)</summary>
       <description>Background Color of Ripple.</description>
     </key>
+    <key type="i" name="time">
+      <default>10</default>
+      <summary>Time</summary>
+      <description>Time of the ripple.</description>
+    </key>
   </schema>
 </schemalist>
