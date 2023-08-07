@@ -21,5 +21,15 @@
       <summary>Time</summary>
       <description>Time of the ripple.</description>
     </key>
+    <key type="b" name="oskbtn">
+      <default>false</default>
+      <summary>OSK Panel Button</summary>
+      <description>OSK Panel Button to force enable/disable OSK mode.</description>
+    </key>
+    <key type="b" name="lastoskon">
+      <default>true</default>
+      <summary>Last OSK Mode</summary>
+      <description>Last OSK Mode selected by user.</description>
+    </key>
   </schema>
 </schemalist>

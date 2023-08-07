@@ -26,7 +26,7 @@ const TouchXSettingsWidget = new GObject.registerClass(
       super._init(params);
       this.margin_top = 15;
       this.margin_bottom = this.margin_top;
-      this.margin_start = 48;
+      this.margin_start = 40;
       this.margin_end = this.margin_start;
       this.row_spacing = 6;
       this.column_spacing = this.row_spacing;
@@ -72,7 +72,6 @@ const TouchXSettingsWidget = new GObject.registerClass(
         hexpand: true,
         margin_bottom: this.margin_bottom,
         margin_top: this.margin_top,
-        // visible: true,
       });
       this.attach(this.separator, 1, rowNo, 2, 1);
 
@@ -194,7 +193,43 @@ const TouchXSettingsWidget = new GObject.registerClass(
 
       //-------------------------------------------------------
 
+      rowNo += 3
+      this.separator2 = new Gtk.Separator({
+        orientation: Gtk.Orientation.HORIZONTAL,
+        hexpand: true,
+        margin_top: this.margin_top/2,
+        margin_bottom: this.margin_bottom/2,
+      });
+      this.attach(this.separator2, 1, rowNo, 2, 1);
+
+      //-------------------------------------------------------
+
       rowNo += 2
+      this.oskBtn = new Gtk.Switch({halign: Gtk.Align.END, valign: Gtk.Align.CENTER});
+      this.oskBtn.set_active(this._settings.get_boolean("oskbtn"));
+
+      this.oskBtn.connect(
+        "state-set",
+        function (w) {
+          var value = w.get_active();
+          this._settings.set_boolean("oskbtn", value);
+        }.bind(this)
+      );
+
+      this.oskBtnLabel = new Gtk.Label({
+        label: `OSK Panel Button :<span size="small" weight="light">
+        A toggle button in panel to force enable/disable On Screen Keyboard.
+        Works regardless of accessibility setting or touch-mode status.</span>`,
+        use_markup: true,
+        halign: Gtk.Align.START,
+      });
+
+      this.attach(this.oskBtnLabel, 1, rowNo, 1, 3);
+      this.attach(this.oskBtn, 2, rowNo, 1, 1);
+
+      //-------------------------------------------------------
+
+      rowNo += 4
       this.separator2 = new Gtk.Separator({
         orientation: Gtk.Orientation.HORIZONTAL,
         hexpand: true,
@@ -209,11 +244,12 @@ const TouchXSettingsWidget = new GObject.registerClass(
         label: `<span allow_breaks="true" size="small" underline="none">
         • Enable Touch Ripple to get feedback ripple on touch.
         • Use Radius, Color and Time to customize ripple appearance.
+        • Turn On OSK Panel Button to force enable/disable OSK.
 
                         Visit  <a href="${Me.metadata.url}">Touch X</a>  page for more details. </span>`,
         use_markup: true,
         hexpand: true,
-        halign: Gtk.Align.START,
+        halign: Gtk.Align.CENTER,
         wrap: true,
         width_chars: 40,
         margin_top: 1,
@@ -232,7 +268,7 @@ function buildPrefsWidget() {
   prefWidget.connect("realize", ()=>{
     const window = prefWidget.get_root();
     window.set_title(_("Touch X"));
-    window.default_height = 525;
+    window.default_height = 620;
     window.default_width = 500;
   });
   return prefWidget;

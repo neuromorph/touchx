@@ -3,7 +3,10 @@ const Ripples = imports.ui.ripples;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
 const St = imports.gi.St;
+const Gio = imports.gi.Gio;
+const OsdWindowManager = Main.osdWindowManager;
 const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 
 const TOUCHX_SCHEMA = "org.gnome.shell.extensions.touchx";
 
@@ -14,6 +17,12 @@ class TouchXExtension {
         this._ripples = null;
         this._touchId = null;
         this._rtime = 10;
+        this._seat = null;
+        this._restoreTouchMode = null;
+        this._oskBtn = null;
+        this._icon = null;
+        this._oskEnabledIcon = null;
+        this._oskDisabledIcon = null;
     }
 
     _styleRipple(radius, bgcolor){
@@ -30,45 +39,107 @@ class TouchXExtension {
         this._ripples._ripple1.style = ripStyle;
         this._ripples._ripple2.style = ripStyle;
         this._ripples._ripple3.style = ripStyle;
+   
     }
 
 
-    _onOskActivated(event){
-        // log('OSK event');
+    _onOskBtnClicked(event){
+       
         if (event.type() == Clutter.EventType.TOUCH_END ||
-             event.type() == Clutter.EventType.BUTTON_RELEASE){
-            // log('OSK activatesdddd');
-            if (Main.keyboard.visible) {
-                Main.keyboard.close();
+             (event.type() == Clutter.EventType.BUTTON_RELEASE && !event.is_pointer_emulated())){
+
+                if (this._seat.get_touch_mode()) {
+                this._seat.get_touch_mode = () => false;
+                Main.keyboard._syncEnabled();
+
+                this._icon.set_gicon(this._oskDisabledIcon);
+                this._settings.set_boolean('lastoskon', false);
+                OsdWindowManager.show(-1, this._oskDisabledIcon, "OSK Disabled");
+                // log('Touch mode disabled');
             }
-            else {
-                Main.keyboard.open(Main.layoutManager.bottomIndex);
+            else 
+            {
+                this._seat.get_touch_mode = () => true;
+                Main.keyboard._syncEnabled();
+
+                this._icon.set_gicon(this._oskEnabledIcon);
+                this._settings.set_boolean('lastoskon', true);
+                OsdWindowManager.show(-1, this._oskEnabledIcon, "OSK Enabled");
+                // log('Touch mode enabled');
             }
 
         }
 
-        return Clutter.EVENT_PROPAGATE;
-        
+        return Clutter.EVENT_PROPAGATE;   
+
     }
 
-    _panelOSK(){
-        this._oskBtn = new PanelMenu.Button(0.0, 'oskBtn@touchx', true);
-        let icon = new St.Icon({icon_name: 'input-keyboard-symbolic', style_class : 'system-status-icon'});
-        this._oskBtn.add_child(icon);
-        Main.panel.addToStatusArea('oskBtn@touchx', this._oskBtn);
-        this._oskBtn.connect('touch-event', (actor, event) => this._onOskActivated(event));
-        this._oskBtn.connect('button-release-event', (actor, event) => this._onOskActivated(event));
+    _createPanelOSK(){
+
+        this._seat = Clutter.get_default_backend().get_default_seat();
+        this._restoreTouchMode = this._seat.get_touch_mode;
+
+        this._oskBtn = new PanelMenu.Button(0.0, 'touchModeBtn@touchx', true);
+
+        let iconDir = Me.dir.get_child('media');
+        let oskEnabledPath = iconDir.get_child("osk-enabled-symbolic.svg").get_path();
+        let oskDisabledPath = iconDir.get_child("osk-disabled-symbolic.svg").get_path();
+        this._oskEnabledIcon = Gio.FileIcon.new(Gio.File.new_for_path(oskEnabledPath));
+        this._oskDisabledIcon = Gio.FileIcon.new(Gio.File.new_for_path(oskDisabledPath));
+        let gicon;
+        // read key 'lastoskon' from settings to set initial mode
+        if (this._settings.get_boolean('lastoskon')){
+            this._seat.get_touch_mode = () => true;
+            gicon = this._oskEnabledIcon;
+        }
+        else{
+            this._seat.get_touch_mode = () => false;
+            gicon = this._oskDisabledIcon;
+        }
+
+        this._icon = new St.Icon({gicon: gicon, style_class : 'system-status-icon'});
+
+        this._oskBtn.add_child(this._icon);
+        Main.panel.addToStatusArea('touchModeBtn@touchx', this._oskBtn);
+        this.oskBtnId = this._oskBtn.connect('captured-event', (actor, event) => this._onOskBtnClicked(event));
+
+    }
+
+    _removePanelOSK(){
+
+        if (this.oskBtnId){
+            this._oskBtn.disconnect(this.oskBtnId);
+            this.oskBtnId = null;
+        }
+
+        if (this._oskBtn){
+            this._oskBtn.destroy();
+            this._oskBtn = null;
+        }
+
+        if (this._restoreTouchMode){
+            this._seat.get_touch_mode = this._restoreTouchMode;
+            this._restoreTouchMode = null;
+        }
+
+        this._seat = null;
+        this._icon = null;
+        this._oskEnabledIcon = null;
+        this._oskDisabledIcon = null;
+    
     }
 
     _syncSettings() {
 
-        const enabled = this._settings.get_boolean('ripple');
+        const rippleOn = this._settings.get_boolean('ripple');
         const radius = this._settings.get_int('radius');
         const bgcolor = this._settings.get_strv('bgcolor');
+        const oskBtnOn = this._settings.get_boolean('oskbtn');
         this._rtime = this._settings.get_int('time');
 
+        // On rippleOn: create or style ripple. On rippleOff: destroy ripple.
         if (this._ripples ){
-            if (enabled){
+            if (rippleOn){
                 this._styleRipple(radius, bgcolor);
             }
             else {
@@ -77,13 +148,24 @@ class TouchXExtension {
             }
         }
         else{
-            if (enabled){
+            if (rippleOn){
                 this._ripples = new Ripples.Ripples(0.5, 0.5, 'ripple-pointer-location');
                 this._styleRipple(radius, bgcolor);
                 this._ripples.addTo(Main.uiGroup);
             }
         }
 
+        // On oskBtnOn: create panel button. On oskBtnOff: remove panel button.
+        if (oskBtnOn){
+            if (!this._oskBtn){
+                this._createPanelOSK();
+            }
+        }
+        else{
+            if (this._oskBtn){
+                this._removePanelOSK();
+            }
+        }
     }
 
     _playAnimation(x, y) {
@@ -123,13 +205,11 @@ class TouchXExtension {
         this._settings.connect(`changed::radius`, () => this._syncSettings());
         this._settings.connect(`changed::bgcolor`, () => this._syncSettings());
         this._settings.connect(`changed::time`, () => this._syncSettings());
+        this._settings.connect(`changed::oskbtn`, () => this._syncSettings());
         this._syncSettings();
-
-        // this._panelOSK();
 
         this._touchId = global.stage.connect('captured-event::touch', (actor, event) => {
 
-            // log('Event type: '+event.type());
             if (event.type() == Clutter.EventType.TOUCH_BEGIN){               
                 let [x, y] = event.get_coords();
                 this._show(x, y);
@@ -153,11 +233,25 @@ class TouchXExtension {
             this._ripples = null;
         }  
 
+        if (this.oskBtnId){
+            this._oskBtn.disconnect(this.oskBtnId);
+            this.oskBtnId = null;
+        }
+
         if (this._oskBtn){
             this._oskBtn.destroy();
             this._oskBtn = null;
         }
         
+        if (this._restoreTouchMode){
+            this._seat.get_touch_mode = this._restoreTouchMode;
+            this._restoreTouchMode = null;
+        }
+
+        this._seat = null;
+        this._icon = null;
+        this._oskEnabledIcon = null;
+        this._oskDisabledIcon = null;
         this._settings = null;
     }
 

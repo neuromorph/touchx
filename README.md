@@ -2,7 +2,8 @@
 # Touch X (GNOME 4X Extension)  
 
 
-A GNOME Shell extension for touch screen accessibility. Currently supports ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size, duration and color as you see fit.
+A GNOME Shell extension for touch screen accessibility. Currently supports ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size, duration and color as you see fit.  
+Additionally, you can add a toggle button in the panel to force enable or force disable On Screen Keyboard (OSK). When enabled, the OSK will pop up in input fields or with Gnome supported gestures. When disabled, the OSK will not pop up at all. This works regardless of Touchscreen Accessibility settings and regardless of whether the screen is in touch mode or not (laptop vs tablet etc). This is useful when the system isn't behaving as expected by default or when you wish to override the default behavior. 
 
 
 ## Installation
@@ -35,9 +36,11 @@ Use the settings panel of the extension for customizations:
 - Set ripple size
 - Set ripple color
 - Set ripple time duration
+- Panel OSK button to force enable/disable OSK
 
 
 ## What's New (recent first)
+- Panel OSK button to force enable/disable OSK
 - Desktop long-press menu bug fix and added support for ripple duration
 - Initial version created
 
@@ -45,7 +48,7 @@ Use the settings panel of the extension for customizations:
 
 ## Screenshots
 
-![Screenshot](media/ripple.gif)  
+![Screenshot](media/Screenshot.png) ![Screenshot](media/ripple.gif)  
 ![Screenshot](media/ripplesScreen.gif) 
 
 
