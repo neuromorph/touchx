@@ -1,18 +1,18 @@
-const Clutter = imports.gi.Clutter;
-const Ripples = imports.ui.ripples;
-const Main = imports.ui.main;
-const PanelMenu = imports.ui.panelMenu;
-const St = imports.gi.St;
-const Gio = imports.gi.Gio;
+import Clutter from 'gi://Clutter';
+import St from 'gi://St';
+import Gio from 'gi://Gio';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import * as Ripples from 'resource:///org/gnome/shell/ui/ripples.js';
+import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
+import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
+
 const OsdWindowManager = Main.osdWindowManager;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
 
-const TOUCHX_SCHEMA = "org.gnome.shell.extensions.touchx";
 
-class TouchXExtension {
-    constructor(){
-        this._schema = TOUCHX_SCHEMA;
+export default class TouchXExtension extends Extension {
+    constructor(metadata){
+        super(metadata);
+        // this._schema = TOUCHX_SCHEMA;
         this._settings = null;
         this._ripples = null;
         this._touchId = null;
@@ -24,24 +24,6 @@ class TouchXExtension {
         this._oskEnabledIcon = null;
         this._oskDisabledIcon = null;
     }
-
-    _styleRipple(radius, bgcolor){
-
-        const bgred = parseInt(parseFloat(bgcolor[0]) * 255);
-        const bggreen = parseInt(parseFloat(bgcolor[1]) * 255);
-        const bgblue = parseInt(parseFloat(bgcolor[2]) * 255);
-        
-        let ripStyle = ` width: ${radius+2}px; height: ${radius+2}px; 
-            background-color: rgba(${bgred},${bggreen},${bgblue},0.5); 
-            box-shadow: 0 0 2px 2px rgba(${bgred},${bggreen},${bgblue},0.2); 
-            border-radius: ${radius+2}px ${radius+2}px ${radius+2}px ${radius+2}px; `;
-        
-        this._ripples._ripple1.style = ripStyle;
-        this._ripples._ripple2.style = ripStyle;
-        this._ripples._ripple3.style = ripStyle;
-   
-    }
-
 
     _onOskBtnClicked(event){
        
@@ -81,9 +63,8 @@ class TouchXExtension {
 
         this._oskBtn = new PanelMenu.Button(0.0, 'touchModeBtn@touchx', true);
 
-        let iconDir = Me.dir.get_child('media');
-        let oskEnabledPath = iconDir.get_child("osk-enabled-symbolic.svg").get_path();
-        let oskDisabledPath = iconDir.get_child("osk-disabled-symbolic.svg").get_path();
+        let oskEnabledPath = this.path + "/media/osk-enabled-symbolic.svg";
+        let oskDisabledPath = this.path + "/media/osk-disabled-symbolic.svg";
         this._oskEnabledIcon = Gio.FileIcon.new(Gio.File.new_for_path(oskEnabledPath));
         this._oskDisabledIcon = Gio.FileIcon.new(Gio.File.new_for_path(oskDisabledPath));
         let gicon;
@@ -129,6 +110,23 @@ class TouchXExtension {
     
     }
 
+    _styleRipple(radius, bgcolor){
+
+        const bgred = parseInt(parseFloat(bgcolor[0]) * 255);
+        const bggreen = parseInt(parseFloat(bgcolor[1]) * 255);
+        const bgblue = parseInt(parseFloat(bgcolor[2]) * 255);
+        
+        let ripStyle = ` width: ${radius+2}px; height: ${radius+2}px; 
+            background-color: rgba(${bgred},${bggreen},${bgblue},0.5); 
+            box-shadow: 0 0 2px 2px rgba(${bgred},${bggreen},${bgblue},0.2); 
+            border-radius: ${radius+2}px ${radius+2}px ${radius+2}px ${radius+2}px; `;
+        
+        this._ripples._ripple1.style = ripStyle;
+        this._ripples._ripple2.style = ripStyle;
+        this._ripples._ripple3.style = ripStyle;
+   
+    }
+
     _syncSettings() {
 
         const rippleOn = this._settings.get_boolean('ripple');
@@ -169,10 +167,12 @@ class TouchXExtension {
     }
 
     _playAnimation(x, y) {
+
+        // log('x, y, rtime '+x+' '+y+' '+this._rtime);
         
         let rtime = this._rtime;
         if (this._ripples._stage === undefined)
-            throw new Error('Ripples not added');
+            throw new Error('Touch X: Ripples not added to stage');
 
         this._ripples._x = x;
         this._ripples._y = y;
@@ -200,17 +200,13 @@ class TouchXExtension {
 
     enable(){
 
-        this._settings = ExtensionUtils.getSettings(this._schema);
-        this._settings.connect(`changed::ripple`, () => this._syncSettings());
-        this._settings.connect(`changed::radius`, () => this._syncSettings());
-        this._settings.connect(`changed::bgcolor`, () => this._syncSettings());
-        this._settings.connect(`changed::time`, () => this._syncSettings());
-        this._settings.connect(`changed::oskbtn`, () => this._syncSettings());
+        this._settings = this.getSettings();
+        this._settings.connect(`changed`, () => this._syncSettings());
         this._syncSettings();
 
         this._touchId = global.stage.connect('captured-event::touch', (actor, event) => {
 
-            if (event.type() == Clutter.EventType.TOUCH_BEGIN){               
+            if (event.type() == Clutter.EventType.TOUCH_BEGIN) {               
                 let [x, y] = event.get_coords();
                 this._show(x, y);
             }
@@ -233,32 +229,16 @@ class TouchXExtension {
             this._ripples = null;
         }  
 
-        if (this.oskBtnId){
-            this._oskBtn.disconnect(this.oskBtnId);
-            this.oskBtnId = null;
-        }
+        /* this._removePanelOSK():
+        * - disconnect oskBtn, set oskBtnId null 
+        * - destroy oskBtn, set null
+        * - restore seat.get_touch_mode, set _restoreToucMode null
+        * - set this._seat, this._icon to null
+        * - set this._oskEnabledIcon, this._oskDisabledIcon to null
+        */
+        this._removePanelOSK();
 
-        if (this._oskBtn){
-            this._oskBtn.destroy();
-            this._oskBtn = null;
-        }
-        
-        if (this._restoreTouchMode){
-            this._seat.get_touch_mode = this._restoreTouchMode;
-            this._restoreTouchMode = null;
-        }
-
-        this._seat = null;
-        this._icon = null;
-        this._oskEnabledIcon = null;
-        this._oskDisabledIcon = null;
         this._settings = null;
     }
 
-}
-
-
-function init() {
-    ExtensionUtils.initTranslations();
-    return new TouchXExtension();
 }
