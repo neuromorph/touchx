@@ -12,7 +12,6 @@ const OsdWindowManager = Main.osdWindowManager;
 export default class TouchXExtension extends Extension {
     constructor(metadata){
         super(metadata);
-        // this._schema = TOUCHX_SCHEMA;
         this._settings = null;
         this._ripples = null;
         this._touchId = null;
