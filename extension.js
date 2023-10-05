@@ -238,6 +238,7 @@ export default class TouchXExtension extends Extension {
         this._removePanelOSK();
 
         this._settings = null;
+        this._rtime = null;
     }
 
 }

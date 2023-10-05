@@ -4,3 +4,5 @@ Additionally, you can add a toggle button in the panel to force enable or force 
 - When enabled, the OSK will pop up in input fields or with Gnome supported gestures. 
 - When disabled, the OSK will not pop up at all. 
 This works regardless of Touchscreen Accessibility settings and regardless of whether the screen is in touch mode or not ( laptop vs tablet etc ).
+
+Note: Gnome 45 version is up! I am unable to do a proper test for 45 with VM, so please try and let me know if any issues.
