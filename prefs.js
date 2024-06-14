@@ -9,8 +9,9 @@ export default class TouchXPreferences extends ExtensionPreferences {
 
   fillPreferencesWindow(window) {
 
+    window.default_width = 630;
     window.default_height = 620;
-    window.default_width = 610;
+    window.set_size_request(625, 615)
 
     const settingsPage = new Adw.PreferencesPage({
       name: 'settings',
@@ -250,7 +251,6 @@ export default class TouchXPreferences extends ExtensionPreferences {
       hexpand: true,
       halign: Gtk.Align.CENTER,
       wrap: true,
-      width_chars: 40,
       margin_top: 1,
     });
 
