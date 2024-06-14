@@ -13,7 +13,6 @@ export default class TouchXExtension extends Extension {
     constructor(metadata){
         super(metadata);
         this._settings = null;
-        this._ripples = null;
         this._touchId = null;
         this._rtime = 10;
         this._seat = null;
@@ -22,6 +21,7 @@ export default class TouchXExtension extends Extension {
         this._icon = null;
         this._oskEnabledIcon = null;
         this._oskDisabledIcon = null;
+        this._rippList = null;
     }
 
     _onOskBtnClicked(event){
@@ -36,7 +36,7 @@ export default class TouchXExtension extends Extension {
                 this._icon.set_gicon(this._oskDisabledIcon);
                 this._settings.set_boolean('lastoskon', false);
                 OsdWindowManager.show(-1, this._oskDisabledIcon, "OSK Disabled");
-                // log('Touch mode disabled');
+                // console.log('Touch mode disabled');
             }
             else 
             {
@@ -46,7 +46,7 @@ export default class TouchXExtension extends Extension {
                 this._icon.set_gicon(this._oskEnabledIcon);
                 this._settings.set_boolean('lastoskon', true);
                 OsdWindowManager.show(-1, this._oskEnabledIcon, "OSK Enabled");
-                // log('Touch mode enabled');
+                // console.log('Touch mode enabled');
             }
 
         }
@@ -109,49 +109,8 @@ export default class TouchXExtension extends Extension {
     
     }
 
-    _styleRipple(radius, bgcolor){
-
-        const bgred = parseInt(parseFloat(bgcolor[0]) * 255);
-        const bggreen = parseInt(parseFloat(bgcolor[1]) * 255);
-        const bgblue = parseInt(parseFloat(bgcolor[2]) * 255);
-        
-        let ripStyle = ` width: ${radius+2}px; height: ${radius+2}px; 
-            background-color: rgba(${bgred},${bggreen},${bgblue},0.5); 
-            box-shadow: 0 0 2px 2px rgba(${bgred},${bggreen},${bgblue},0.2); 
-            border-radius: ${radius+2}px ${radius+2}px ${radius+2}px ${radius+2}px; `;
-        
-        this._ripples._ripple1.style = ripStyle;
-        this._ripples._ripple2.style = ripStyle;
-        this._ripples._ripple3.style = ripStyle;
-   
-    }
-
-    _syncSettings() {
-
-        const rippleOn = this._settings.get_boolean('ripple');
-        const radius = this._settings.get_int('radius');
-        const bgcolor = this._settings.get_strv('bgcolor');
+    _setOsk() {
         const oskBtnOn = this._settings.get_boolean('oskbtn');
-        this._rtime = this._settings.get_int('time');
-
-        // On rippleOn: create or style ripple. On rippleOff: destroy ripple.
-        if (this._ripples ){
-            if (rippleOn){
-                this._styleRipple(radius, bgcolor);
-            }
-            else {
-                this._ripples.destroy();
-                this._ripples = null;
-            }
-        }
-        else{
-            if (rippleOn){
-                this._ripples = new Ripples.Ripples(0.5, 0.5, 'ripple-pointer-location');
-                this._styleRipple(radius, bgcolor);
-                this._ripples.addTo(Main.uiGroup);
-            }
-        }
-
         // On oskBtnOn: create panel button. On oskBtnOff: remove panel button.
         if (oskBtnOn){
             if (!this._oskBtn){
@@ -165,53 +124,128 @@ export default class TouchXExtension extends Extension {
         }
     }
 
-    _playAnimation(x, y) {
-
-        // log('x, y, rtime '+x+' '+y+' '+this._rtime);
+    _playAnimation(mode, widget, x, y) {
         
         let rtime = this._rtime;
-        if (this._ripples._stage === undefined)
-            throw new Error('Touch X: Ripples not added to stage');
+        if (widget._stage === undefined)
+            throw new Error('Touch X: Widget not added to stage for '+mode);
 
-        this._ripples._x = x;
-        this._ripples._y = y;
+        if (mode == 'touch') {
+            const ripples = widget
+            ripples._x = x;
+            ripples._y = y;
 
-        this._ripples._stage.set_child_above_sibling(this._ripples._ripple1, null);
-        this._ripples._stage.set_child_above_sibling(this._ripples._ripple2, this._ripples._ripple1);
-        this._ripples._stage.set_child_above_sibling(this._ripples._ripple3, this._ripples._ripple2);
+            ripples._stage.set_child_above_sibling(ripples._ripple1, null);
+            ripples._stage.set_child_above_sibling(ripples._ripple2, ripples._ripple1);
+            ripples._stage.set_child_above_sibling(ripples._ripple3, ripples._ripple2);
 
-        // Show three concentric ripples expanding outwards; the exact parameters were found  
-        // by trial and error, so don't look for them to make perfect sense mathematically.
-        // rtime (1 to 20) allows to customize ripple duration.
-        //                                                delay     time        scale opacity => scale
-        this._ripples._animRipple(this._ripples._ripple1, 0,        70*rtime,   0.25,  1.0,      1.5);
-        this._ripples._animRipple(this._ripples._ripple2, 5*rtime,  90*rtime,   0.0,   0.7,      1.25);
-        this._ripples._animRipple(this._ripples._ripple3, 35*rtime, 100*rtime,  0.0,   0.3,      1);
+            // Show three concentric ripples expanding outwards; the exact parameters were found  
+            // by trial and error, so don't look for them to make perfect sense mathematically.
+            // rtime (1 to 20) allows to customize ripple duration.
+            //                                    delay     time        scale opacity => scale
+            ripples._animRipple(ripples._ripple1, 0,        60*rtime,   0.2,   1.0,      1.15);
+            ripples._animRipple(ripples._ripple2, 2*rtime,  70*rtime,   0.0,   0.7,      1.125);
+            ripples._animRipple(ripples._ripple3, 3*rtime,  80*rtime,   0.0,   0.3,      1.0);
+
+        }
+
     }
 
-    _show(x, y) {
+    _show(mode, x, y) {
 
-        if (!this._ripples)
+        if (!this._rippList)
             return;
 
-        this._playAnimation(x, y);
+        if (mode == 'touch') {
+            for (const ripples of this._rippList) {
+                if (!ripples._ripple3.visible) {
+                    this._playAnimation(mode, ripples, x, y);
+                    return;
+                }            
+            }
+            this._playAnimation(mode, this._rippList[0], x, y);
+        }
+
+    }
+
+    _styleRipple(){
+
+        if (!this._rippList)
+            return;
+
+        this._rtime = this._settings.get_int('time');
+        const radius = this._settings.get_int('radius');
+        const bgcolor = this._settings.get_strv('bgcolor');
+        const bgred = parseInt(parseFloat(bgcolor[0]) * 255);
+        const bggreen = parseInt(parseFloat(bgcolor[1]) * 255);
+        const bgblue = parseInt(parseFloat(bgcolor[2]) * 255);
+        
+        let ripStyle = ` width: ${radius+2}px; height: ${radius+2}px; 
+            background-color: rgba(${bgred},${bggreen},${bgblue},0.5); 
+            box-shadow: 0 0 2px 2px rgba(${bgred},${bggreen},${bgblue},0.15); 
+            border-radius: ${radius+2}px ${radius+2}px ${radius+2}px ${radius+2}px; `;
+        
+        for (const ripples of this._rippList) {
+            ripples._ripple1.style = ripStyle;
+            ripples._ripple2.style = ripStyle;
+            ripples._ripple3.style = ripStyle;
+        }   
+
+    }
+
+    _setRipple() {
+        const rippleOn = this._settings.get_boolean('ripple');
+        if (rippleOn) {
+            if (!this._rippList) {
+                this._rippList = [];
+                for (let i=0; i<12; i++) {
+                    const ripples = new Ripples.Ripples(0.5, 0.5, 'touch-x-ripples');
+                    ripples.addTo(Main.uiGroup);
+                    this._rippList.push(ripples);
+                }
+                
+            }
+            this._styleRipple();
+
+            if (!this._touchId) {
+                this._touchId = global.stage.connect('captured-event::touch', (actor, event) => {
+                    let [x, y] = event.get_coords();
+                    if (event.type() == Clutter.EventType.TOUCH_BEGIN) {    
+                        this._show('touch', x, y);
+                    }
+                    
+                    return Clutter.EVENT_PROPAGATE;
+                });
+            }
+
+        }
+        else {
+            if (this._rippList) {
+                for (const ripples of this._rippList) {
+                    ripples?.destroy();
+                }
+                this._rippList = null;
+            }
+
+            if (this._touchId){
+                global.stage.disconnect(this._touchId);
+                this._touchId = null;
+            }
+        }
+
     }
 
     enable(){
 
         this._settings = this.getSettings();
-        this._settings.connect(`changed`, () => this._syncSettings());
-        this._syncSettings();
-
-        this._touchId = global.stage.connect('captured-event::touch', (actor, event) => {
-
-            if (event.type() == Clutter.EventType.TOUCH_BEGIN) {               
-                let [x, y] = event.get_coords();
-                this._show(x, y);
-            }
-            
-            return Clutter.EVENT_PROPAGATE;
+        this._settings.connect(`changed::ripple`, () => this._setRipple());
+        [`changed::radius`, `changed::bgcolor`, `changed::time`].forEach(event => {
+            this._settings.connect(event, () => this._styleRipple());
         });
+        this._settings.connect(`changed::oskbtn`, () => this._setOsk());
+
+        this._setRipple();
+        this._setOsk();
 
     }
 
@@ -223,9 +257,11 @@ export default class TouchXExtension extends Extension {
             this._touchId = null;
         }
 
-        if (this._ripples ){
-            this._ripples.destroy();
-            this._ripples = null;
+        if (this._rippList) {
+            for (const ripples of this._rippList) {
+                ripples?.destroy();
+            }
+            this._rippList = null;
         }  
 
         /* this._removePanelOSK():
