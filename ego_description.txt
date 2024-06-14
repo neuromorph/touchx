@@ -1,8 +1,11 @@
 Touch screen ( touchscreen ) accessibility with touch feedback and OSK button. 
-Currently supports ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size, duration and color as you see fit.
+Currently supports multi-touch ripple feedback where the screen is touched. You can enable/disable the touch-feedback and set its size, duration and color as you see fit.
+
 Additionally, you can add a toggle button in the panel to force enable or force disable On Screen Keyboard ( OSK ). 
 - When enabled, the OSK will pop up in input fields or with Gnome supported gestures. 
 - When disabled, the OSK will not pop up at all. 
 This works regardless of Touchscreen Accessibility settings and regardless of whether the screen is in touch mode or not ( laptop vs tablet etc ).
 
-Note: Gnome 45 version is up! I am unable to do a proper test for 45 with VM, so please try and let me know if any issues.
+Update: Multitouch support
+
+Other extensions: https://extensions.gnome.org/accounts/profile/neuromorph
