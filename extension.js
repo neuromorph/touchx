@@ -198,9 +198,10 @@ export default class TouchXExtension extends Extension {
         for (const ripples of this._rippList) {
             if (ripples._touchId === touchId) {
                 ripples._touchId = null;
+                /* let the ripples fade out
                 ripples._ripple1.opacity = 0;
                 ripples._ripple2.opacity = 0;
-                ripples._ripple3.opacity = 0;
+                ripples._ripple3.opacity = 0;*/
                 return;
             }
         }
